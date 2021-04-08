@@ -1,31 +1,27 @@
-const stream = require('stream');
-console.log(stream.Readable);
+const { createReadStream, createWriteStream } = require('fs');
 
-const fs = require('fs');
-const readFromFile = fs.createReadStream('./uncensored_file.txt');
-const writeInFile = fs.createWriteStream('./censored_file.txt');
-readFromFile.setEncoding('utf-8');
+const source = createReadStream('uncensored_file_v2.txt');
+const destination = createWriteStream('censored_file_v2.txt');
 
-const chunks = [];
+source.setEncoding('utf-8');
 
-readFromFile.on('readable', () => {
-    let chunk;
-    while (null !== (chunk = readFromFile.read())) {
-        chunks.push(chunk);
-    }
-    console.log(readFromFile.read());
+const badWords = ['fucking', 'bullshit', 'fuck', 'shit', 'dick', 'boobs', 'pussy', 'asshole'];
+
+source.on('data', (chunk) => {
+    let censored = chunk;
+    badWords.forEach(word => {
+        if (chunk.includes(word)) {
+            const length = word.length;
+            let newValue = "";
+            for (let i = 0; i < length; ++i) {
+                newValue += "*";
+            }
+            censored = censored.replace(word, newValue);
+        }
+    });
+    destination.write(censored);
 });
 
-console.log(chunks);
-
-readFromFile.on('end', () => {
-    console.log('end');
+source.on('end', () => {
+    destination.end();
 });
-
-let text = readFromFile.read();
-console.log(text)
-
-// let text = readFromFile.read();
-
-// console.log('$ { readFromFile.read() }');
-// console.log(writeInFile);
